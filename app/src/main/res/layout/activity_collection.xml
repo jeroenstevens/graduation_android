@@ -5,13 +5,6 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent">
 
-    <ImageView
-        android:id="@+id/add_collection"
-        android:layout_gravity="right"
-        android:src="@android:drawable/ic_menu_add"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
-
     <com.example.jeroenstevens.graduation_android.view.SlidingTabLayout
         android:id="@+id/sliding_tabs"
         android:layout_width="match_parent"

@@ -50,6 +50,15 @@
                        android:resource="@xml/authenticator" />
         </service>
 
+        <!-- Database -->
+        <provider android:authorities="ourContentProviderAuthorities"
+                  android:exported="true"
+                  android:grantUriPermissions="true"
+                  android:name=".db.DbContentProvider">
+            <grant-uri-permission android:pathPattern="/collection"/>
+        </provider>
+
+
     </application>
 
 </manifest>

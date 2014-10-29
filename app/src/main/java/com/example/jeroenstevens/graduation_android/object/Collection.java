@@ -1,17 +1,39 @@
 package com.example.jeroenstevens.graduation_android.object;
 
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
+import com.example.jeroenstevens.graduation_android.db.DbHelper;
+
 import java.io.Serializable;
 import java.util.List;
 
-public class Collection implements Serializable {
+public class Collection extends BaseObject implements Serializable {
 
     private String name;
     private String imageUrl;
+    private Bitmap image;
     private List<Item> items;
     private int userId;
     private int id;
 
+    public Bitmap getImage() {
+        return image;
+    }
+
+    public Collection(Cursor cursor) {
+        super(cursor);
+
+        name = cursor.getString(cursor.getColumnIndex(DbHelper.COLLECTION_COL_NAME));
+        byte[] byteArrayImage = cursor.getBlob(cursor.getColumnIndex(DbHelper.COLLECTION_COL_IMAGE));
+        if (byteArrayImage != null) {
+            image = BitmapFactory.decodeByteArray(byteArrayImage, 0, byteArrayImage.length);
+        }
+    }
+
     public Collection(String name, int userId) {
+        super(null);
         this.name = name;
         this.userId = userId;
     }
@@ -20,35 +42,15 @@ public class Collection implements Serializable {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getImageUrl() {
         return imageUrl;
     }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public List<Item> getItems() {
-        return items;
-    }
-
-    public void setItems(List<Item> items) {
-        this.items = items;
-    }
+    public List<Item> getItems() { return items; }
 
     public int getUserId() {
         return userId;
     }
 
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-
-    public int getId() {
-        return id;
-    }
+    public int getId() { return id; }
 }

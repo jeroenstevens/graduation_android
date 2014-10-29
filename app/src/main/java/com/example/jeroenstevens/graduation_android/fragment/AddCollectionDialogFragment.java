@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.ComponentName;
+import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -28,8 +29,11 @@ import android.widget.Toast;
 
 import com.example.jeroenstevens.graduation_android.R;
 import com.example.jeroenstevens.graduation_android.activity.CollectionActivity;
+import com.example.jeroenstevens.graduation_android.db.DbContentProvider;
+import com.example.jeroenstevens.graduation_android.db.DbHelper;
 import com.example.jeroenstevens.graduation_android.view.InfiniteClearableEditText;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -60,7 +64,7 @@ public class AddCollectionDialogFragment extends DialogFragment {
         dialog.setContentView(R.layout.dialog_add_collection);
 
         // Find views
-        InfiniteClearableEditText collectionName = (InfiniteClearableEditText) dialog.findViewById(R.id.name);
+        final InfiniteClearableEditText collectionName = (InfiniteClearableEditText) dialog.findViewById(R.id.name);
         preview = (ImageView) dialog.findViewById(R.id.preview);
         defaultButton = (TextView) dialog.findViewById(R.id.default_button);
         uploadButton = (TextView) dialog.findViewById(R.id.upload_button);
@@ -94,7 +98,22 @@ public class AddCollectionDialogFragment extends DialogFragment {
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Database stuff
+
+                // Insert into database
+                ContentValues values = new ContentValues();
+                values.put(DbHelper.COLLECTION_COL_NAME, collectionName.getText().toString());
+
+                if (mPreviewBitmap != null) {
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    mPreviewBitmap.compress(Bitmap.CompressFormat.PNG, 100, bos);
+                    byte[] byteArray = bos.toByteArray();
+                    values.put(DbHelper.COLLECTION_COL_IMAGE, byteArray);
+                }
+
+                getActivity().getContentResolver().insert(
+                        DbContentProvider.getContentUri("collection"), values);
+
+                dialog.dismiss();
             }
         });
 
