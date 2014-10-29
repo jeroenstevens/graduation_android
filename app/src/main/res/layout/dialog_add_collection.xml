@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:padding="15dp"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical">
+
+    <TextView
+        android:text="Name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <com.example.jeroenstevens.graduation_android.view.InfiniteClearableEditText
+        android:id="@+id/name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:text="Photo of collection"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/preview"
+            android:background="@drawable/default_icon"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <ImageView
+            android:background="@drawable/gradient_top_alpha"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        </FrameLayout>
+
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_marginTop="10dp"
+        android:background="#979797"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/default_button"
+            android:text="Default"
+            android:textColor="#FFF"
+            android:background="#7ED321"
+            android:gravity="center"
+            android:layout_width="0dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"/>
+        
+        <View
+            android:layout_width="0.5dp"
+            android:background="#33000000"
+            android:layout_height="match_parent"/>
+
+        <TextView
+            android:id="@+id/upload_button"
+            android:text="Upload"
+            android:gravity="center"
+            android:textColor="#FFF"
+            android:layout_width="0dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"/>
+
+        </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_marginTop="10dp"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/ok_button"
+            android:text="Ok"
+            android:background="#979797"
+            android:textColor="#FFF"
+            android:gravity="center"
+            android:layout_width="0dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:layout_weight="50"
+            android:layout_height="wrap_content"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_weight="15"
+            android:layout_height="match_parent"/>
+
+        <TextView
+            android:id="@+id/cancel_button"
+            android:text="Cancel"
+            android:background="#979797"
+            android:gravity="center"
+            android:textColor="#FFF"
+            android:layout_width="0dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:layout_weight="50"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+</LinearLayout>
