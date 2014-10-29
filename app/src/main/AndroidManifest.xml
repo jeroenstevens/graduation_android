@@ -31,6 +31,10 @@
             </intent-filter>
         </activity>
 
+        <!-- Client -->
+        <activity android:name=".activity.CollectionActivity" android:label="@string/collection_label"/>
+
+        <!-- Authentication -->
         <activity android:name=".authentication.AuthenticatorActivity" android:label="@string/login_label"/>
         <activity android:name=".authentication.SignUpActivity" android:label="@string/signup_title" />
 

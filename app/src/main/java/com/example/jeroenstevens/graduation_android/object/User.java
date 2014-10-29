@@ -5,9 +5,9 @@ import java.io.Serializable;
 public class User implements Serializable {
 
     private String id;
-    private final String email;
-    private final String password;
-    private final String userName;
+    private String email;
+    private String password;
+    private String userName;
     private ApiKey apiKey;
 
     public User(String email, String password) {

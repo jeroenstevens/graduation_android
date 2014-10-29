@@ -1,17 +1,14 @@
 package com.example.jeroenstevens.graduation_android.object;
 
 public class Item {
-    private String id;
     private String name;
     private String imageUrl;
-    private String collection_id;
+    private int collectionId;
+    private int id;
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    public Item(String name, int collectionId) {
+        this.name = name;
+        this.collectionId = collectionId;
     }
 
     public String getName() {
@@ -30,11 +27,15 @@ public class Item {
         this.imageUrl = imageUrl;
     }
 
-    public String getCollection_id() {
-        return collection_id;
+    public int getCollectionId() {
+        return collectionId;
     }
 
-    public void setCollection_id(String collection_id) {
-        this.collection_id = collection_id;
+    public void setCollectionId(int collectionId) {
+        this.collectionId = collectionId;
+    }
+
+    public int getId() {
+        return id;
     }
 }

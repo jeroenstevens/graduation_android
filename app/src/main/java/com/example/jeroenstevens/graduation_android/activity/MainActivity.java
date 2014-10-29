@@ -5,12 +5,14 @@ import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import com.example.jeroenstevens.graduation_android.activity.CollectionActivity;
 import com.example.jeroenstevens.graduation_android.authentication.AccountGeneral;
 
 
@@ -31,18 +33,6 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 getTokenForAccountCreateIfNeeded(AccountGeneral.ACCOUNT_TYPE, AccountGeneral.AUTHTOKEN_TYPE_STANDARD_ACCESS);
-
-//                RestClient.get().getCollections("1", new Callback<List<Collection>>() {
-//                    @Override
-//                    public void success(List<Collection> collections, Response response) {
-//                        Log.d(TAG, "collections : " + collections);
-//                    }
-//
-//                    @Override
-//                    public void failure(RetrofitError error) {
-//                        Log.d(TAG, "error : " + error);
-//                    }
-//                });
             }
         });
     }
@@ -61,6 +51,8 @@ public class MainActivity extends Activity {
                         String accountName = bnd.getString(AccountManager.KEY_ACCOUNT_NAME);
                         mConnectedAccount = new Account(accountName, AccountGeneral.ACCOUNT_TYPE);
 //                        refreshSyncStatus();
+                        Intent intent = new Intent(MainActivity.this, CollectionActivity.class);
+                        MainActivity.this.startActivity(intent);
                     }
                     Log.d(TAG, "authToken : " + ((authToken != null) ? "SUCCESS!\ntoken: " + authToken : "FAIL"));
                     Log.d(TAG, "GetTokenForAccount Bundle is " + bnd);
