@@ -58,6 +58,16 @@
             <grant-uri-permission android:pathPattern="/collection"/>
         </provider>
 
+        <!-- Sync Adapter -->
+        <service android:name=".syncadapter.SyncService"
+                 android:exported="true">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/sync_adapter"/>
+        </service>
 
     </application>
 

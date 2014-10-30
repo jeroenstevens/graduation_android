@@ -18,17 +18,18 @@ import retrofit.http.POST;
 import retrofit.http.Path;
 
 public interface API {
-    @GET("/users/{user_id}/collections")
-    void getCollections(@Path("user_id") String userId, Callback<List<Collection>> callback);
-
-    @POST("/users/{user_id}/collections")
-    void postCollection(@Path("user_id") String userId, @Body CollectionPostRequestBody payload, Callback<Collection> callback);
 
     @POST("/users")
     void registerUser(@Body UserRegisterRequestBody payload, Callback<ApiKey> callback); // payload new User(email, password)
 
     @POST("/session")
     void authenticateUser(@Body UserAuthenticateRequestBody payload, Callback<ApiKey> callback); // payload new User(email, password)
+
+    @GET("/users/{user_id}/collections")
+    void getCollections(@Path("user_id") int userId, Callback<List<Collection>> callback);
+
+    @POST("/users/{user_id}/collections")
+    void postCollection(@Path("user_id") int userId, @Body CollectionPostRequestBody payload, Callback<Collection> callback);
 
     @GET("/collections/{collection_id}/items")
     void getItems(@Path("collection_id") int collectionId, Callback<List<Item>> callback);

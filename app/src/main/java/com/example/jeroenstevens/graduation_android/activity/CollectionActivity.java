@@ -1,11 +1,12 @@
 package com.example.jeroenstevens.graduation_android.activity;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.ContentObserver;
-import android.database.Cursor;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
@@ -14,12 +15,8 @@ import com.example.jeroenstevens.graduation_android.R;
 import com.example.jeroenstevens.graduation_android.adapter.CollectionsAdapter;
 import com.example.jeroenstevens.graduation_android.db.DbContentProvider;
 import com.example.jeroenstevens.graduation_android.db.DbHelper;
+import com.example.jeroenstevens.graduation_android.db.DbInterface;
 import com.example.jeroenstevens.graduation_android.fragment.AddCollectionDialogFragment;
-import com.example.jeroenstevens.graduation_android.object.BaseObject;
-import com.example.jeroenstevens.graduation_android.object.Collection;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class CollectionActivity extends Activity {
     public static final String TAG = "CollectionActivity";
@@ -40,18 +37,24 @@ public class CollectionActivity extends Activity {
         mContentObserver = new ContentObserver(null) {
             @Override
             public void onChange(boolean selfChange) {
-                Log.d(TAG, "contentObserver : onChange ");
                 super.onChange(selfChange);
                 refresh();
             }
         };
 
+        Account account = AccountManager.get(this).getAccountsByType("com.example.jeroenstevens.graduation_android")[0];
+
+        Bundle bundle = new Bundle();
+        bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true); // Performing a sync no matter if it's off
+        bundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true); // Performing a sync no matter if it's off
+        ContentResolver.requestSync(account, DbContentProvider.AUTHORITY, bundle);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        getContentResolver().registerContentObserver(DbContentProvider.getContentUri("collection"), true, mContentObserver);
+        getContentResolver().registerContentObserver(
+                DbContentProvider.getContentUri(DbHelper.COLLECTION_TABLE_NAME), true, mContentObserver);
     }
 
     @Override
@@ -92,32 +95,9 @@ public class CollectionActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mListView.setAdapter(new CollectionsAdapter(CollectionActivity.this, getCollections()));
+                mListView.setAdapter(new CollectionsAdapter(CollectionActivity.this, DbInterface.getCollections()));
             }
         });
-    }
-
-    private List<Collection> getCollections() {
-        List<BaseObject> baseObjects = DbContentProvider.get(DbHelper.COLLECTION_TABLE_NAME);
-        List<Collection> collections = new ArrayList<Collection>();
-
-        // Change BaseObjects to Collections;
-        Cursor cursor = null;
-        for(int i = 0; i < baseObjects.size(); i++) {
-            BaseObject object = baseObjects.get(i);
-
-            cursor = object.getCursor();
-            cursor.moveToPosition(i);
-
-            Collection collection = new Collection(cursor);
-            collections.add(collection);
-        }
-
-        if (cursor != null) {
-            cursor.close();
-        }
-
-        return collections;
     }
 }
 

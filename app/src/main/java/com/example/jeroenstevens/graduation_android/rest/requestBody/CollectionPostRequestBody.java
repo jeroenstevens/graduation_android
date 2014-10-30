@@ -8,4 +8,8 @@ public class CollectionPostRequestBody {
     public CollectionPostRequestBody(String name, int userId) {
         this.collection = new Collection(name, userId);
     }
+
+    public CollectionPostRequestBody(Collection collection) {
+        this.collection = collection;
+    }
 }
