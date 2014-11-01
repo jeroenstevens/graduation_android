@@ -87,9 +87,9 @@ public class CollectionsAdapter extends BaseAdapter {
 
         Collection collection = getItem(position);
 
-        viewHolder.name.setText(collection.getName());
-        if (collection.getImage() != null) {
-            viewHolder.image.setBackground(new BitmapDrawable(mContext.getResources(), collection.getImage()));
+        viewHolder.name.setText(collection.getName() + " " + collection.getUpdatedAt());
+        if (collection.getImagePath() != null) {
+            viewHolder.image.setBackground(new BitmapDrawable(mContext.getResources(), collection.getImagePath()));
         } else {
             viewHolder.image.setBackgroundResource(R.drawable.default_icon);
         }

@@ -21,17 +21,15 @@ import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
-import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SyncResult;
 import android.os.Bundle;
-import android.os.RemoteException;
 import android.util.Log;
 
+import com.activeandroid.ActiveAndroid;
+import com.example.jeroenstevens.graduation_android.activity.CollectionActivity;
 import com.example.jeroenstevens.graduation_android.authentication.AccountGeneral;
-import com.example.jeroenstevens.graduation_android.db.DbContentProvider;
-import com.example.jeroenstevens.graduation_android.db.DbHelper;
-import com.example.jeroenstevens.graduation_android.db.DbInterface;
 import com.example.jeroenstevens.graduation_android.object.Collection;
 import com.example.jeroenstevens.graduation_android.rest.RestClient;
 import com.example.jeroenstevens.graduation_android.rest.requestBody.CollectionPostRequestBody;
@@ -56,14 +54,18 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private static final String TAG = "SwatchesSyncAdapter";
 
     private final AccountManager mAccountManager;
+    private final Context mContext;
 
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
         mAccountManager = AccountManager.get(context);
+        mContext = context;
     }
 
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority, final ContentProviderClient provider, SyncResult syncResult) {
+
+        Log.d(TAG, "Perform sync");
 
         // Building a print of the extras we got
         StringBuilder sb = new StringBuilder();
@@ -84,7 +86,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 @Override
                 public void success(List<Collection> collections, Response response) {
                     List<Collection> remoteObjects = collections;
-                    List<Collection> localObjects = DbInterface.getCollections();
+
+                    List<Collection> localObjects = Collection.getInRange(
+                            Collection.COL_UPDATED_AT,
+                            "now", "-" + CollectionActivity.SYNC_INTERVAL_IN_MINUTES + "minutes");
 
                     // See what Local objects are missing on Remote
                     ArrayList<Collection> toRemote = new ArrayList<Collection>();
@@ -94,10 +99,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     }
 
                     // See what Remote objects are missing on Local
-                    ArrayList<Collection> toLocal = new ArrayList<Collection>();
+                    ArrayList<Collection> objectsToLocal = new ArrayList<Collection>();
                     for (Collection remoteObject : remoteObjects) {
                         if (!localObjects.contains(remoteObject))
-                            toLocal.add(remoteObject);
+                            objectsToLocal.add(remoteObject);
                     }
 
                     if (toRemote.size() == 0) {
@@ -123,27 +128,25 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         }
                     }
 
-                    if (toLocal.size() == 0) {
+                    if (objectsToLocal.size() == 0) {
                         Log.d(TAG, "No server changes to update local database");
                     } else {
                         Log.d(TAG, "Updating local database with remote changes");
 
                         // Updating local object
-                        int i = 0;
-                        ContentValues toLocalValues[] = new ContentValues[toLocal.size()];
-                        for (Collection localObject : toLocal) {
-                            Log.d(TAG, "Remote -> Local [" + localObject.getName() + "]");
-
-                            ContentValues values = new ContentValues();
-                            values.put(DbHelper.COLLECTION_COL_NAME, localObject.getName());
-
-                            toLocalValues[i++] = values;
-                        }
+                        ActiveAndroid.beginTransaction();
                         try {
-                            provider.bulkInsert(DbContentProvider.getContentUri(DbHelper.COLLECTION_TABLE_NAME), toLocalValues);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
+                            for (Collection remoteObject : objectsToLocal) {
+                                Collection collection = new Collection();
+                                collection.name = remoteObject.getName();
+                                collection.save();
+                            }
+                            ActiveAndroid.setTransactionSuccessful();
                         }
+                        finally {
+                            ActiveAndroid.endTransaction();
+                        }
+                        databaseUpdated();
                     }
                     Log.d(TAG, "Finished syncing.");
                 }
@@ -153,7 +156,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
                 }
             });
-
 
         } catch (OperationCanceledException e) {
             e.printStackTrace();
@@ -167,5 +169,16 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             e.printStackTrace();
         }
     }
+
+    private void databaseUpdated() {
+        getContext().sendBroadcast(new Intent(SyncService.DATABASE_UPDATED));
+    }
+
+//    public String millisToDatetime(long millis) {
+//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:.SS");
+//        Date resultdate = new Date(millis);
+//
+//        return sdf.format(resultdate);
+//    }
 }
 

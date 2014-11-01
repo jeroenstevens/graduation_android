@@ -6,7 +6,9 @@ public class CollectionPostRequestBody {
     Collection collection;
 
     public CollectionPostRequestBody(String name, int userId) {
-        this.collection = new Collection(name, userId);
+        this.collection = new Collection();
+        this.collection.name = name;
+        this.collection.userId = userId;
     }
 
     public CollectionPostRequestBody(Collection collection) {

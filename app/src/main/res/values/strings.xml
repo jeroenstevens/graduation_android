@@ -7,5 +7,6 @@
     <string name="signup_title">Create new account</string>
     <string name="login_label">Log in</string>
     <string name="collection_label">Collections</string>
+    <string name="databaseName">Scavenger.db</string>
 
 </resources>

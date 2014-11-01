@@ -6,7 +6,7 @@ public class AccountGeneral {
     public static final String ACCOUNT_TYPE = "com.example.jeroenstevens.graduation_android";
 
 //  Account name
-    public static final String ACCOUNT_NAME = "GraduationAndroid";
+    public static final String ACCOUNT_NAME = "Scavenger";
 
 //  Auth token types
     public static final String AUTHTOKEN_TYPE_READ_ONLY = "Read only";

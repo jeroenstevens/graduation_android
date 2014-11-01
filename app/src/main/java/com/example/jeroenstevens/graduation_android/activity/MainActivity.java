@@ -50,7 +50,6 @@ public class MainActivity extends Activity {
                     if (authToken != null) {
                         String accountName = bnd.getString(AccountManager.KEY_ACCOUNT_NAME);
                         mConnectedAccount = new Account(accountName, AccountGeneral.ACCOUNT_TYPE);
-//                        refreshSyncStatus();
                         Intent intent = new Intent(MainActivity.this, CollectionActivity.class);
                         MainActivity.this.startActivity(intent);
                     }

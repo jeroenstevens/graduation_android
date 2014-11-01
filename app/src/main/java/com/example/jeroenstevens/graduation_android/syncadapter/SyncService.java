@@ -21,6 +21,9 @@ import android.os.IBinder;
 
 public class SyncService extends Service {
 
+    private static final String TAG = "SyncService";
+    public static final String DATABASE_UPDATED = "database updated";
+
     private static final Object sSyncAdapterLock = new Object();
     private static SyncAdapter sSyncAdapter = null;
 
@@ -36,4 +39,5 @@ public class SyncService extends Service {
     public IBinder onBind(Intent intent) {
         return sSyncAdapter.getSyncAdapterBinder();
     }
+
 }

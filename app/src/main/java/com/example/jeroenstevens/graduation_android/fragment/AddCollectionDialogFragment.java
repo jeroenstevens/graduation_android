@@ -4,18 +4,14 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.ComponentName;
-import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
-import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -29,26 +25,25 @@ import android.widget.Toast;
 
 import com.example.jeroenstevens.graduation_android.R;
 import com.example.jeroenstevens.graduation_android.activity.CollectionActivity;
-import com.example.jeroenstevens.graduation_android.db.DbContentProvider;
-import com.example.jeroenstevens.graduation_android.db.DbHelper;
+import com.example.jeroenstevens.graduation_android.object.Collection;
+import com.example.jeroenstevens.graduation_android.syncadapter.SyncService;
+import com.example.jeroenstevens.graduation_android.utils.ImageHelper;
 import com.example.jeroenstevens.graduation_android.view.InfiniteClearableEditText;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AddCollectionDialogFragment extends DialogFragment {
 
     private static final String TAG = "AddCollectionDialogFragment";
-    private static final String PREVIEW = "previewBitmap";
+    private static final String IMAGE_PATH = "imagePath";
 
     private Uri outputFileUri;
-    private TextView defaultButton;
-    private TextView uploadButton;
-    private ImageView preview;
-    private Bitmap mPreviewBitmap;
+    private TextView mDefaultButton;
+    private TextView mUploadButton;
+    private ImageView mPreview;
+    private String mImagePath;
 
     @Override
     public void onAttach(Activity activity) {
@@ -65,15 +60,15 @@ public class AddCollectionDialogFragment extends DialogFragment {
 
         // Find views
         final InfiniteClearableEditText collectionName = (InfiniteClearableEditText) dialog.findViewById(R.id.name);
-        preview = (ImageView) dialog.findViewById(R.id.preview);
-        defaultButton = (TextView) dialog.findViewById(R.id.default_button);
-        uploadButton = (TextView) dialog.findViewById(R.id.upload_button);
+        mPreview = (ImageView) dialog.findViewById(R.id.preview);
+        mDefaultButton = (TextView) dialog.findViewById(R.id.default_button);
+        mUploadButton = (TextView) dialog.findViewById(R.id.upload_button);
         TextView okButton = (TextView) dialog.findViewById(R.id.ok_button);
         TextView cancelButton = (TextView) dialog.findViewById(R.id.cancel_button);
 
         // Set tags for the selection toggling
-        defaultButton.setTag("default");
-        uploadButton.setTag("upload");
+        mDefaultButton.setTag("default");
+        mUploadButton.setTag("upload");
 
         // Click listener for opening the image chooser
         View.OnClickListener openImageIntent = new View.OnClickListener() {
@@ -82,16 +77,16 @@ public class AddCollectionDialogFragment extends DialogFragment {
                 openImageIntent();
             }
         };
-        uploadButton.setOnClickListener(openImageIntent);
-        preview.setOnClickListener(openImageIntent);
+        mUploadButton.setOnClickListener(openImageIntent);
+        mPreview.setOnClickListener(openImageIntent);
 
-        // Click listener to toggle selection and set the preview back to the default
-        defaultButton.setOnClickListener(new View.OnClickListener() {
+        // Click listener to toggle selection and set the mPreview back to the default
+        mDefaultButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 toggleSelection(view);
-                preview.setBackgroundResource(R.drawable.default_icon);
-                mPreviewBitmap = null;
+                mPreview.setBackgroundResource(R.drawable.default_icon);
+                mImagePath = null;
             }
         });
 
@@ -100,18 +95,14 @@ public class AddCollectionDialogFragment extends DialogFragment {
             public void onClick(View view) {
 
                 // Insert into database
-                ContentValues values = new ContentValues();
-                values.put(DbHelper.COLLECTION_COL_NAME, collectionName.getText().toString());
+                Collection collection = new Collection();
+                collection.name = collectionName.getText().toString();
 
-                if (mPreviewBitmap != null) {
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    mPreviewBitmap.compress(Bitmap.CompressFormat.PNG, 100, bos);
-                    byte[] byteArray = bos.toByteArray();
-                    values.put(DbHelper.COLLECTION_COL_IMAGE, byteArray);
+                if (mImagePath != null) {
+                    collection.imagePath = mImagePath;
                 }
-
-                getActivity().getContentResolver().insert(
-                        DbContentProvider.getContentUri("collection"), values);
+                collection.save();
+                databaseUpdated();
 
                 dialog.dismiss();
             }
@@ -125,15 +116,17 @@ public class AddCollectionDialogFragment extends DialogFragment {
             }
         });
 
-        // Restore preview image and toggle on rotation
-        Log.d(TAG, "mPreviewBitmap onCreate : " + mPreviewBitmap);
+        // Restore image from mImagePath and toggle on rotation
+        Log.d(TAG, "mImagePath onCreate : " + mImagePath);
         if (savedInstanceState != null) {
-            Bitmap previewBitmap = savedInstanceState.getParcelable(PREVIEW);
-            if (previewBitmap != null) {
-                Log.d(TAG, "previewBitmap : " + previewBitmap);
-                mPreviewBitmap = previewBitmap;
-                preview.setBackground(new BitmapDrawable(getResources(), previewBitmap));
-                toggleSelection(uploadButton);
+            String imagePath = savedInstanceState.getString(IMAGE_PATH);
+            if (imagePath != null) {
+                Log.d(TAG, "imagePath : " + imagePath);
+                mImagePath = imagePath;
+
+                Bitmap bitmap = new ImageHelper().getBitmapFromImagePath(mImagePath);
+                mPreview.setBackground(new BitmapDrawable(getResources(), bitmap));
+                toggleSelection(mUploadButton);
             }
         }
 
@@ -143,9 +136,9 @@ public class AddCollectionDialogFragment extends DialogFragment {
     private void toggleSelection(View view) {
         view.setBackgroundColor(Color.parseColor("#7ED321"));
         if (view.getTag().equals("upload")) {
-            defaultButton.setBackgroundColor(Color.TRANSPARENT);
+            mDefaultButton.setBackgroundColor(Color.TRANSPARENT);
         } else {
-            uploadButton.setBackgroundColor(Color.TRANSPARENT);
+            mUploadButton.setBackgroundColor(Color.TRANSPARENT);
         }
     }
 
@@ -208,60 +201,15 @@ public class AddCollectionDialogFragment extends DialogFragment {
             selectedImageUri = intent.getData();
             imagePath = getPath(selectedImageUri);
         }
+
         Log.d(TAG, "selectedImageUri : " + selectedImageUri);
+        Log.d(TAG, "imagePath : " + imagePath);
 
-        Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
-        Bitmap adjustedBitmap = handleBitmap(bitmap, imagePath);
+        mImagePath = imagePath;
+        Bitmap bitmap = new ImageHelper().getBitmapFromImagePath(mImagePath);
 
-        mPreviewBitmap = adjustedBitmap;
-        preview.setBackground(new BitmapDrawable(getResources(), adjustedBitmap));
-        toggleSelection(uploadButton);
-    }
-
-    private Bitmap handleBitmap(Bitmap bitmap, String imagePath) {
-        ExifInterface exif = null;
-        Bitmap adjustedBitmap = null;
-        try {
-            exif = new ExifInterface(imagePath);
-            int rotation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-            int rotationInDegrees = exifToDegrees(rotation);
-
-            Matrix matrix = new Matrix();
-            if (rotation != 0f) {matrix.preRotate(rotationInDegrees);}
-
-            if (bitmap.getHeight() >= bitmap.getWidth()){
-
-                adjustedBitmap = Bitmap.createBitmap(bitmap,
-                        0,
-                        bitmap.getHeight()/2 - bitmap.getWidth()/2,
-                        bitmap.getWidth(),
-                        bitmap.getWidth()/2,
-                        matrix, true);
-            } else {
-                matrix.postScale(0.25f, 0.25f);
-                adjustedBitmap = Bitmap.createBitmap(bitmap,
-                        0,
-                        0,
-                        bitmap.getWidth(),
-                        bitmap.getHeight(),
-                        matrix, true);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        if (adjustedBitmap != null) {
-            return adjustedBitmap;
-        } else {
-            return bitmap;
-        }
-    }
-
-    private static int exifToDegrees(int exifOrientation) {
-        if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_90) { return 90; }
-        else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_180) {  return 180; }
-        else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_270) {  return 270; }
-        return 0;
+        mPreview.setBackground(new BitmapDrawable(getResources(), bitmap));
+        toggleSelection(mUploadButton);
     }
 
     private String getPath(Uri uri) {
@@ -270,13 +218,21 @@ public class AddCollectionDialogFragment extends DialogFragment {
         Cursor cursor = loader.loadInBackground();
         int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
         cursor.moveToFirst();
-        return cursor.getString(column_index);
+
+        String path = cursor.getString(column_index);
+        cursor.close();
+
+        return path;
     }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        Log.d(TAG, "mPreviewBitmap onSaveInstanceState : " + mPreviewBitmap);
-        savedInstanceState.putParcelable(PREVIEW, mPreviewBitmap);
+        Log.d(TAG, "mImagePath onSaveInstanceState : " + mImagePath);
+        savedInstanceState.putString(IMAGE_PATH, mImagePath);
         super.onSaveInstanceState(savedInstanceState);
+    }
+
+    private void databaseUpdated() {
+        getActivity().sendBroadcast(new Intent(SyncService.DATABASE_UPDATED));
     }
 }

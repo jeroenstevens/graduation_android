@@ -12,7 +12,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.jeroenstevens.graduation_android.R;
 import com.example.jeroenstevens.graduation_android.object.ApiKey;
@@ -83,13 +82,13 @@ public class SignUpActivity extends Activity {
         Log.d(TAG, "createAccount");
 
         // Validation!
-        new AsyncTask<String, Void, Intent>() {
+        new AsyncTask<String, Void, Void>() {
 
             String email = ((TextView) findViewById(R.id.accountName)).getText().toString().trim();
             String password = ((TextView) findViewById(R.id.accountPassword)).getText().toString().trim();
 
             @Override
-            protected Intent doInBackground(String... params) {
+            protected Void doInBackground(String... params) {
 
                 Log.d(TAG, "Started authenticating");
 
@@ -103,6 +102,11 @@ public class SignUpActivity extends Activity {
                             data.putString(AccountManager.KEY_ACCOUNT_TYPE, mAccountType);
                             data.putString(AccountManager.KEY_AUTHTOKEN, apiKey.getAccessToken());
                             data.putString(PARAM_USER_PASS, password);
+
+                            final Intent intent = new Intent();
+                            intent.putExtras(data);
+                            setResult(RESULT_OK, intent);
+                            finish();
                         }
 
                         @Override
@@ -114,21 +118,12 @@ public class SignUpActivity extends Activity {
                 } catch (Exception e) {
                     data.putString(KEY_ERROR_MESSAGE, e.getMessage());
                 }
-
-                final Intent res = new Intent();
-                res.putExtras(data);
-                return res;
+                return null;
             }
 
             @Override
-            protected void onPostExecute(Intent intent) {
-                if (intent.hasExtra(KEY_ERROR_MESSAGE)) {
-                    Toast.makeText(getBaseContext(), intent.getStringExtra(KEY_ERROR_MESSAGE), Toast.LENGTH_SHORT).show();
-                } else {
-                    setResult(RESULT_OK, intent);
-                    finish();
-                }
-            }
+            protected void onPostExecute(Void v) { }
+
         }.execute();
     }
 
@@ -137,4 +132,5 @@ public class SignUpActivity extends Activity {
         setResult(RESULT_CANCELED);
         super.onBackPressed();
     }
+
 }

@@ -1,29 +1,41 @@
 package com.example.jeroenstevens.graduation_android.activity;
 
-import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.app.Activity;
-import android.content.ContentResolver;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.ContentObserver;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
 
 import com.example.jeroenstevens.graduation_android.R;
 import com.example.jeroenstevens.graduation_android.adapter.CollectionsAdapter;
-import com.example.jeroenstevens.graduation_android.db.DbContentProvider;
-import com.example.jeroenstevens.graduation_android.db.DbHelper;
-import com.example.jeroenstevens.graduation_android.db.DbInterface;
 import com.example.jeroenstevens.graduation_android.fragment.AddCollectionDialogFragment;
+import com.example.jeroenstevens.graduation_android.object.Collection;
+import com.example.jeroenstevens.graduation_android.syncadapter.SyncService;
 
 public class CollectionActivity extends Activity {
     public static final String TAG = "CollectionActivity";
 
     public static final int SELECT_PICTURE_FOR_COLLECTION_DIALOG = 1;
+
+    public static final long SECONDS_PER_MINUTE = 60L;
+    public static final long SYNC_INTERVAL_IN_MINUTES = 1L;
+
+    public static final long SECONDS_PER_HOUR = 3600L;
+    public static final long SYNC_INTERVAL_IN_HOURS = 6L;
+
+    public static final long SYNC_SMALL_INTERVAL = SYNC_INTERVAL_IN_MINUTES * SECONDS_PER_MINUTE;
+    public static final long SYNC_LARGE_INTERVAL = SECONDS_PER_HOUR * SYNC_INTERVAL_IN_HOURS;
+
     private ListView mListView;
     private ContentObserver mContentObserver;
+    private BroadcastReceiver mDbBroadcastReceiver;
+    private IntentFilter mDbIntentFilter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,25 +54,23 @@ public class CollectionActivity extends Activity {
             }
         };
 
-        Account account = AccountManager.get(this).getAccountsByType("com.example.jeroenstevens.graduation_android")[0];
-
-        Bundle bundle = new Bundle();
-        bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true); // Performing a sync no matter if it's off
-        bundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true); // Performing a sync no matter if it's off
-        ContentResolver.requestSync(account, DbContentProvider.AUTHORITY, bundle);
+        setBroadcastReceiver();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        getContentResolver().registerContentObserver(
-                DbContentProvider.getContentUri(DbHelper.COLLECTION_TABLE_NAME), true, mContentObserver);
+        if (mDbBroadcastReceiver != null) {
+            registerReceiver(mDbBroadcastReceiver, mDbIntentFilter);
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        getContentResolver().unregisterContentObserver(mContentObserver);
+        if (mDbBroadcastReceiver != null) {
+            unregisterReceiver(mDbBroadcastReceiver);
+        }
     }
 
     @Override
@@ -95,9 +105,28 @@ public class CollectionActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mListView.setAdapter(new CollectionsAdapter(CollectionActivity.this, DbInterface.getCollections()));
+                mListView.setAdapter(new CollectionsAdapter(CollectionActivity.this, Collection.all()));
             }
         });
+    }
+
+    private void setBroadcastReceiver() {
+
+        mDbBroadcastReceiver = new BroadcastReceiver() {
+
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                Log.d(TAG, action);
+
+                if (action.equals(SyncService.DATABASE_UPDATED)) {
+                    refresh();
+                }
+            }
+        };
+
+        mDbIntentFilter = new IntentFilter(SyncService.DATABASE_UPDATED);
+        registerReceiver(mDbBroadcastReceiver, mDbIntentFilter);
     }
 }
 

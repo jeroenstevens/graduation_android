@@ -1,56 +1,57 @@
 package com.example.jeroenstevens.graduation_android.object;
 
-import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-
-import com.example.jeroenstevens.graduation_android.db.DbHelper;
+import com.activeandroid.Model;
+import com.activeandroid.annotation.Column;
+import com.activeandroid.annotation.Table;
+import com.activeandroid.query.Select;
 
 import java.io.Serializable;
 import java.util.List;
 
-public class Collection extends BaseObject implements Serializable {
+@Table(name = "collections")
+public class Collection extends Model implements Serializable {
 
-    private String name;
-    private String imageUrl;
-    private Bitmap image;
+    public static final String COL_ID = "_id";
+    public static final String COL_USER_ID = "user_id";
+    public static final String COL_NAME = "name";
+    public static final String COL_IMAGE_PATH = "image_path";
+    public static final String COL_UPDATED_AT = "updated_at";
+    public static final String COL_CREATED_AT = "created_at";
+
+    @Column(name = COL_ID)
+    public int id;
+    @Column(name = COL_USER_ID)
+    public int userId;
+    @Column(name = COL_NAME, index = true)
+    public String name;
+    @Column(name = COL_IMAGE_PATH)
+    public String imagePath;
+    @Column(name = COL_CREATED_AT)
+    public String createdAt;
+    @Column(name = COL_UPDATED_AT)
+    public String updatedAt;
+
     private List<Item> items;
-    private int userId;
-    private int id;
-
-    public Bitmap getImage() {
-        return image;
-    }
-
-    public Collection(Cursor cursor) {
-        super(cursor);
-
-        name = cursor.getString(cursor.getColumnIndex(DbHelper.COLLECTION_COL_NAME));
-        byte[] byteArrayImage = cursor.getBlob(cursor.getColumnIndex(DbHelper.COLLECTION_COL_IMAGE));
-        if (byteArrayImage != null) {
-            image = BitmapFactory.decodeByteArray(byteArrayImage, 0, byteArrayImage.length);
-        }
-    }
-
-    public Collection(String name, int userId) {
-        super(null);
-        this.name = name;
-        this.userId = userId;
-    }
 
     public String getName() {
         return name;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
+    public String getUpdatedAt() {
+        return updatedAt;
     }
 
-    public List<Item> getItems() { return items; }
-
-    public int getUserId() {
-        return userId;
+    public String getImagePath() {
+        return imagePath;
     }
 
-    public int getId() { return id; }
+    public static List<Collection> all() {
+        return new Select().from(Collection.class).execute();
+    }
+
+    public static List<Collection> getInRange(String columnName, String startDatetime, String endDatetime) {
+        return new Select().from(Collection.class).where(
+                columnName + " >= Datetime('?') AND " + columnName + " <= Datetime('?')", startDatetime, endDatetime
+        ).execute();
+    }
 }
