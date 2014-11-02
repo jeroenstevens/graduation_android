@@ -58,7 +58,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         String accountName = getIntent().getStringExtra(ARG_ACCOUNT_NAME);
         mAuthTokenType = getIntent().getStringExtra(ARG_AUTH_TYPE);
         if (mAuthTokenType == null)
-            mAuthTokenType = AccountGeneral.AUTHTOKEN_TYPE_STANDARD_ACCESS;
+            mAuthTokenType = AccountHelper.AUTHTOKEN_TYPE_STANDARD_ACCESS;
 
         if (accountName != null) {
             ((TextView)findViewById(R.id.email)).setText(accountName);
@@ -123,7 +123,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             public void success(ApiKey apiKey, Response response) {
                 data.putString(AccountManager.KEY_ACCOUNT_NAME, email);
                 data.putString(AccountManager.KEY_ACCOUNT_TYPE, accountType);
-                data.putString(AccountManager.KEY_AUTHTOKEN, apiKey.getAccessToken());
+                data.putString(AccountManager.KEY_AUTHTOKEN, apiKey.accessToken);
                 data.putString(PARAM_USER_PASS, password);
 
                 final Intent intent  = new Intent();

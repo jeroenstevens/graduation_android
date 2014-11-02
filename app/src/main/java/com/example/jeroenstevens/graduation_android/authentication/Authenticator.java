@@ -20,10 +20,10 @@ import retrofit.RetrofitError;
 import retrofit.client.Response;
 
 import static android.accounts.AccountManager.KEY_BOOLEAN_RESULT;
-import static com.example.jeroenstevens.graduation_android.authentication.AccountGeneral.AUTHTOKEN_TYPE_READ_ONLY;
-import static com.example.jeroenstevens.graduation_android.authentication.AccountGeneral.AUTHTOKEN_TYPE_READ_ONLY_LABEL;
-import static com.example.jeroenstevens.graduation_android.authentication.AccountGeneral.AUTHTOKEN_TYPE_STANDARD_ACCESS;
-import static com.example.jeroenstevens.graduation_android.authentication.AccountGeneral.AUTHTOKEN_TYPE_STANDARD_ACCESS_LABEL;
+import static com.example.jeroenstevens.graduation_android.authentication.AccountHelper.AUTHTOKEN_TYPE_READ_ONLY;
+import static com.example.jeroenstevens.graduation_android.authentication.AccountHelper.AUTHTOKEN_TYPE_READ_ONLY_LABEL;
+import static com.example.jeroenstevens.graduation_android.authentication.AccountHelper.AUTHTOKEN_TYPE_STANDARD_ACCESS;
+import static com.example.jeroenstevens.graduation_android.authentication.AccountHelper.AUTHTOKEN_TYPE_STANDARD_ACCESS_LABEL;
 
 public class Authenticator extends AbstractAccountAuthenticator {
 
@@ -56,7 +56,7 @@ public class Authenticator extends AbstractAccountAuthenticator {
 
         // If the caller requested an authToken type we don't support, then
         // return an error
-        if (!authTokenType.equals(AccountGeneral.AUTHTOKEN_TYPE_READ_ONLY) && !authTokenType.equals(AccountGeneral.AUTHTOKEN_TYPE_STANDARD_ACCESS)) {
+        if (!authTokenType.equals(AccountHelper.AUTHTOKEN_TYPE_READ_ONLY) && !authTokenType.equals(AccountHelper.AUTHTOKEN_TYPE_STANDARD_ACCESS)) {
             final Bundle result = new Bundle();
             result.putString(AccountManager.KEY_ERROR_MESSAGE, "invalid authTokenType");
             return result;
@@ -78,7 +78,7 @@ public class Authenticator extends AbstractAccountAuthenticator {
                 RestClient.get().authenticateUser(new UserAuthenticateRequestBody(account.name, password), new Callback<ApiKey>() {
                     @Override
                     public void success(ApiKey apiKey, Response response) {
-                        authToken[0] = apiKey.getAccessToken();
+                        authToken[0] = apiKey.accessToken;
                     }
 
                     @Override

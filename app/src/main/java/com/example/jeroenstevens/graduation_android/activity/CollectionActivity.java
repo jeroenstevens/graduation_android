@@ -23,15 +23,6 @@ public class CollectionActivity extends Activity {
 
     public static final int SELECT_PICTURE_FOR_COLLECTION_DIALOG = 1;
 
-    public static final long SECONDS_PER_MINUTE = 60L;
-    public static final long SYNC_INTERVAL_IN_MINUTES = 1L;
-
-    public static final long SECONDS_PER_HOUR = 3600L;
-    public static final long SYNC_INTERVAL_IN_HOURS = 6L;
-
-    public static final long SYNC_SMALL_INTERVAL = SYNC_INTERVAL_IN_MINUTES * SECONDS_PER_MINUTE;
-    public static final long SYNC_LARGE_INTERVAL = SECONDS_PER_HOUR * SYNC_INTERVAL_IN_HOURS;
-
     private ListView mListView;
     private ContentObserver mContentObserver;
     private BroadcastReceiver mDbBroadcastReceiver;
@@ -93,6 +84,7 @@ public class CollectionActivity extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.d(TAG, "onActivityResult");
         if(resultCode == RESULT_OK) {
             if(requestCode == SELECT_PICTURE_FOR_COLLECTION_DIALOG) {
                 ((AddCollectionDialogFragment) getFragmentManager()

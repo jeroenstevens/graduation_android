@@ -15,6 +15,7 @@ import android.widget.TextView;
 
 import com.example.jeroenstevens.graduation_android.R;
 import com.example.jeroenstevens.graduation_android.object.ApiKey;
+import com.example.jeroenstevens.graduation_android.object.User;
 import com.example.jeroenstevens.graduation_android.rest.RestClient;
 import com.example.jeroenstevens.graduation_android.rest.requestBody.UserRegisterRequestBody;
 
@@ -86,6 +87,7 @@ public class SignUpActivity extends Activity {
 
             String email = ((TextView) findViewById(R.id.accountName)).getText().toString().trim();
             String password = ((TextView) findViewById(R.id.accountPassword)).getText().toString().trim();
+            String userName = email.split("@")[0];
 
             @Override
             protected Void doInBackground(String... params) {
@@ -95,15 +97,28 @@ public class SignUpActivity extends Activity {
                 String authtoken = null;
                 final Bundle data = new Bundle();
                 try {
-                    RestClient.get().registerUser(new UserRegisterRequestBody(email, password), new Callback<ApiKey>() {
+                    RestClient.get().registerUser(new UserRegisterRequestBody(email, password, userName), new Callback<ApiKey>() {
                         @Override
                         public void success(ApiKey apiKey, Response response) {
+                            Log.d(TAG, "sign up accessToken : " + apiKey.accessToken);
+
                             data.putString(AccountManager.KEY_ACCOUNT_NAME, email);
                             data.putString(AccountManager.KEY_ACCOUNT_TYPE, mAccountType);
-                            data.putString(AccountManager.KEY_AUTHTOKEN, apiKey.getAccessToken());
+                            data.putString(AccountManager.KEY_AUTHTOKEN, apiKey.accessToken);
                             data.putString(PARAM_USER_PASS, password);
+                            data.putBoolean(AuthenticatorActivity.ARG_IS_ADDING_NEW_ACCOUNT, true);
 
-                            final Intent intent = new Intent();
+                            // Create new User in db
+                            User user = new User();
+                            user.id = apiKey.userId;
+                            user.email = email;
+                            user.userName = userName;
+                            user.save();
+
+                            // Create save the api key in database
+                            apiKey.save();
+
+                            Intent intent = new Intent();
                             intent.putExtras(data);
                             setResult(RESULT_OK, intent);
                             finish();

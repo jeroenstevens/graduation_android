@@ -17,8 +17,6 @@ package com.example.jeroenstevens.graduation_android.syncadapter;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.accounts.AuthenticatorException;
-import android.accounts.OperationCanceledException;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.Context;
@@ -28,30 +26,24 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.activeandroid.ActiveAndroid;
-import com.example.jeroenstevens.graduation_android.activity.CollectionActivity;
-import com.example.jeroenstevens.graduation_android.authentication.AccountGeneral;
+import com.example.jeroenstevens.graduation_android.authentication.AccountHelper;
 import com.example.jeroenstevens.graduation_android.object.Collection;
+import com.example.jeroenstevens.graduation_android.object.User;
 import com.example.jeroenstevens.graduation_android.rest.RestClient;
 import com.example.jeroenstevens.graduation_android.rest.requestBody.CollectionPostRequestBody;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
 
-/**
- * SwatchesSyncAdapter implementation for syncing sample SwatchesSyncAdapter contacts to the
- * platform ContactOperations provider.  This sample shows a basic 2-way
- * sync between the client and a sample server.  It also contains an
- * example of how to update the contacts' status messages, which
- * would be useful for a messaging or social networking client.
- */
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
-    private static final String TAG = "SwatchesSyncAdapter";
+    private static final String TAG = "SyncAdapter";
 
     private final AccountManager mAccountManager;
     private final Context mContext;
@@ -65,120 +57,175 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority, final ContentProviderClient provider, SyncResult syncResult) {
 
-        Log.d(TAG, "Perform sync");
+        Log.d(TAG, "onPerformSync");
 
-        // Building a print of the extras we got
-        StringBuilder sb = new StringBuilder();
-        if (extras != null) {
-            for (String key : extras.keySet()) {
-                sb.append(key + "[" + extras.get(key) + "] ");
-            }
-        }
+        // Get the auth token for the current account.
+        final User user = User.getCurrentUser(AccountHelper.getCurrentAuthtoken());
 
-        Log.d(TAG, "onPerformSync for account[" + account.name + "]. Extras: "+sb.toString());
-        try {
-            // Get the auth token for the current account.
-            final String authToken = mAccountManager.blockingGetAuthToken(account,
-                    AccountGeneral.AUTHTOKEN_TYPE_STANDARD_ACCESS, true);
+        Log.d(TAG, "Get remote collections");
+        RestClient.get().getCollections(user.id, new Callback<List<Collection>>() {
 
-            Log.d(TAG, "Get remote collections");
-            RestClient.get().getCollections(4, new Callback<List<Collection>>() {
-                @Override
-                public void success(List<Collection> collections, Response response) {
-                    List<Collection> remoteObjects = collections;
+            @Override
+            public void success(List<Collection> collections, Response response) {
+                String dateAgo = new Date((System.currentTimeMillis() - (1000 * 60 * 10))).toString();
 
-                    List<Collection> localObjects = Collection.getInRange(
-                            Collection.COL_UPDATED_AT,
-                            "now", "-" + CollectionActivity.SYNC_INTERVAL_IN_MINUTES + "minutes");
+                // Remote
+                List<Collection> updatedRemoteObjects = collections;
 
-                    // See what Local objects are missing on Remote
-                    ArrayList<Collection> toRemote = new ArrayList<Collection>();
-                    for (Collection localObject : localObjects) {
-                        if (!remoteObjects.contains(localObject))
-                            toRemote.add(localObject);
-                    }
+                // Local
+                List<Collection> allLocaObjects = Collection.all();
+                List<UUID> allLocaObjectsId = new ArrayList<UUID>();
 
-                    // See what Remote objects are missing on Local
-                    ArrayList<Collection> objectsToLocal = new ArrayList<Collection>();
-                    for (Collection remoteObject : remoteObjects) {
-                        if (!localObjects.contains(remoteObject))
-                            objectsToLocal.add(remoteObject);
-                    }
+                // Local -> Remote
+                List<Collection> createdLocalObjects = Collection.whereDateAgo(
+                        Collection.COL_CREATED_AT, dateAgo);
+                List<Collection> updatedLocalObjects = Collection.whereDateAgo(
+                        Collection.COL_UPDATED_AT, dateAgo);
 
-                    if (toRemote.size() == 0) {
-                        Log.d(TAG, "No local changes to update server");
+                // Remote -> Local
+                List<Collection> remoteObjectsToBeCreatedLocally = new ArrayList<Collection>();
+                List<Collection> remoteObjectsToBeUpdatedLocally = new ArrayList<Collection>();
+
+                Log.d(TAG, "createdLocalObjects :" + createdLocalObjects);
+                Log.d(TAG, "updatedLocalObjects :" + updatedLocalObjects);
+
+                // Get an array of the ids of all local objects
+                for (Collection localObject : allLocaObjects) {
+                    allLocaObjectsId.add(localObject.id);
+                }
+
+                // Determine if remote object needs to be created or updated locally.
+                for (Collection remoteObject : updatedRemoteObjects) {
+                    // If object with id already exists add to ToBeUpdated
+                    // Else add to ToBeCreated
+                    if (allLocaObjectsId.contains(remoteObject.id)) {
+                        remoteObjectsToBeUpdatedLocally.add(remoteObject);
                     } else {
-                        Log.d(TAG, "Updating remote server with local changes");
+                        remoteObjectsToBeCreatedLocally.add(remoteObject);
+                    }
+                }
 
-                        // Updating remote object
-                        for (Collection localObject : toRemote) {
-                            Log.d(TAG, "Local -> Remote [" + localObject.getName() + "]");
-                            CollectionPostRequestBody requestBody = new CollectionPostRequestBody(localObject.getName(), 4);
-                            RestClient.get().postCollection(4, requestBody, new Callback<Collection>() {
-                                @Override
-                                public void success(Collection collection, Response response) {
-                                    Log.d(TAG, "success : " + response.toString());
-                                }
+                Log.d(TAG, "Determine if remote object needs to be created or updated locally");
+                Log.d(TAG, "remoteObjectsToBeCreatedLocally :" + remoteObjectsToBeCreatedLocally);
+                Log.d(TAG, "remoteObjectsToBeUpdatedLocally :" + remoteObjectsToBeUpdatedLocally);
 
-                                @Override
-                                public void failure(RetrofitError error) {
-                                    Log.d(TAG, "failure : " + error.getBody().toString());
-                                }
-                            });
+                // Remove object from updatedLocalObjects if CREATED_AT == UPDATED_AT
+                // Otherwise it will do an unnecessary additional request.
+                for (Collection localobject : updatedLocalObjects) {
+                    if (localobject.updatedAt.equals(localobject.createdAt)) {
+                        updatedLocalObjects.remove(localobject);
+                    }
+                }
+
+                Log.d(TAG, "Double dates should be removed");
+                Log.d(TAG, "createdLocalObjects :" + createdLocalObjects);
+                Log.d(TAG, "updatedLocalObjects :" + updatedLocalObjects);
+
+                if (remoteObjectsToBeCreatedLocally.size() == 0) {
+                    Log.d(TAG, "No local objects to be created");
+                } else {
+                    Log.d(TAG, "Creating local objects from new remote objects");
+
+                    ActiveAndroid.beginTransaction();
+                    try {
+                        // Create for every remote object
+                        // that doesn't exist locally, a new local object
+                        for (Collection remoteObject : remoteObjectsToBeCreatedLocally) {
+                            Log.d(TAG, "Remote --create--> Local : " + remoteObject.name);
+//                            Collection collection = new Collection();
+//                            collection.id = remoteObject.id;
+//                            collection.name = remoteObject.name;
+//                            collection.userId = remoteObject.userId;
+//                            collection.save();
+                            remoteObject.save();
                         }
+                        ActiveAndroid.setTransactionSuccessful();
                     }
+                    finally {
+                        ActiveAndroid.endTransaction();
+                    }
+                    databaseUpdated();
+                }
 
-                    if (objectsToLocal.size() == 0) {
-                        Log.d(TAG, "No server changes to update local database");
-                    } else {
-                        Log.d(TAG, "Updating local database with remote changes");
+                if (remoteObjectsToBeUpdatedLocally.size() == 0) {
+                    Log.d(TAG, "No local objects to be updated");
+                } else {
+                    Log.d(TAG, "Updating local objects from remote objects");
 
-                        // Updating local object
-                        ActiveAndroid.beginTransaction();
-                        try {
-                            for (Collection remoteObject : objectsToLocal) {
-                                Collection collection = new Collection();
-                                collection.name = remoteObject.getName();
-                                collection.save();
+                    ActiveAndroid.beginTransaction();
+                    try {
+                        for (Collection remoteObject : remoteObjectsToBeUpdatedLocally) {
+                            Log.d(TAG, "Remote --update--> Local : " + remoteObject.name);
+
+                            Collection localObject = Collection.get(remoteObject.id);
+                            localObject.updateFromRemote(remoteObject);
+                        }
+                        ActiveAndroid.setTransactionSuccessful();
+                    }
+                    finally {
+                        ActiveAndroid.endTransaction();
+                    }
+                    databaseUpdated();
+                }
+
+                if (createdLocalObjects.size() == 0) {
+                    Log.d(TAG, "No new locally created objects");
+                } else {
+                    Log.d(TAG, "Updating remote objects from local objects");
+
+                    // Create for every local object
+                    // that doesn't exist remotely, a new remote object
+                    for (Collection localObject : createdLocalObjects) {
+                        Log.d(TAG, "Local --create--> Remote [" + localObject.name);
+
+                        CollectionPostRequestBody requestBody = new CollectionPostRequestBody(localObject);
+                        RestClient.get().postCollection(requestBody, new Callback<Collection>() {
+                            @Override
+                            public void success(Collection collection, Response response) {
+                                Log.d(TAG, "success : " + response.toString());
                             }
-                            ActiveAndroid.setTransactionSuccessful();
-                        }
-                        finally {
-                            ActiveAndroid.endTransaction();
-                        }
-                        databaseUpdated();
+
+                            @Override
+                            public void failure(RetrofitError error) {
+                                Log.d(TAG, "failure : " + error.getBody().toString());
+                            }
+                        });
                     }
-                    Log.d(TAG, "Finished syncing.");
                 }
 
-                @Override
-                public void failure(RetrofitError error) {
+                if (updatedLocalObjects.size() == 0) {
+                    Log.d(TAG, "No remote objects to be updated");
+                } else {
+                    for (Collection localObject : createdLocalObjects) {
+                        Log.d(TAG, "Local --update--> Remote [" + localObject.name);
 
+                        CollectionPostRequestBody requestBody = new CollectionPostRequestBody(localObject);
+                        RestClient.get().postCollection(requestBody, new Callback<Collection>() {
+                            @Override
+                            public void success(Collection collection, Response response) {
+                                Log.d(TAG, "success : " + response.toString());
+                            }
+
+                            @Override
+                            public void failure(RetrofitError error) {
+                                Log.d(TAG, "failure : " + error.getBody().toString());
+                            }
+                        });
+                    }
                 }
-            });
 
-        } catch (OperationCanceledException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            syncResult.stats.numIoExceptions++;
-            e.printStackTrace();
-        } catch (AuthenticatorException e) {
-            syncResult.stats.numAuthExceptions++;
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+                Log.d(TAG, "Finished syncing.");
+            }
+
+            @Override
+            public void failure(RetrofitError error) {
+
+            }
+        });
     }
 
     private void databaseUpdated() {
         getContext().sendBroadcast(new Intent(SyncService.DATABASE_UPDATED));
     }
-
-//    public String millisToDatetime(long millis) {
-//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:.SS");
-//        Date resultdate = new Date(millis);
-//
-//        return sdf.format(resultdate);
-//    }
 }
 

@@ -5,6 +5,7 @@ import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -13,13 +14,23 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.example.jeroenstevens.graduation_android.activity.CollectionActivity;
-import com.example.jeroenstevens.graduation_android.authentication.AccountGeneral;
+import com.example.jeroenstevens.graduation_android.authentication.AccountHelper;
 
 
 public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
+    private static final String AUTHORITY = "ourContentProviderAuthorities";
+
+    public static final long SECONDS_PER_MINUTE = 60L;
+    public static final long SYNC_INTERVAL_IN_MINUTES = 1L;
+
+    public static final long SECONDS_PER_HOUR = 3600L;
+    public static final long SYNC_INTERVAL_IN_HOURS = 6L;
+
+    public static final long SYNC_SMALL_INTERVAL = SYNC_INTERVAL_IN_MINUTES * SECONDS_PER_MINUTE;
+    public static final long SYNC_LARGE_INTERVAL = SECONDS_PER_HOUR * SYNC_INTERVAL_IN_HOURS;
+
     private String authToken;
-    private Account mConnectedAccount;
     private AccountManager mAccountManager;
 
     @Override
@@ -32,11 +43,10 @@ public class MainActivity extends Activity {
         findViewById(R.id.hit_me_icon).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getTokenForAccountCreateIfNeeded(AccountGeneral.ACCOUNT_TYPE, AccountGeneral.AUTHTOKEN_TYPE_STANDARD_ACCESS);
+                getTokenForAccountCreateIfNeeded(AccountHelper.ACCOUNT_TYPE, AccountHelper.AUTHTOKEN_TYPE_STANDARD_ACCESS);
             }
         });
     }
-
 
     private void getTokenForAccountCreateIfNeeded(String accountType, String authTokenType) {
         final AccountManagerFuture<Bundle> future = mAccountManager.getAuthTokenByFeatures(accountType, authTokenType, null, this, null, null, new AccountManagerCallback<Bundle>() {
@@ -49,7 +59,13 @@ public class MainActivity extends Activity {
                     authToken = bnd.getString(AccountManager.KEY_AUTHTOKEN);
                     if (authToken != null) {
                         String accountName = bnd.getString(AccountManager.KEY_ACCOUNT_NAME);
-                        mConnectedAccount = new Account(accountName, AccountGeneral.ACCOUNT_TYPE);
+
+                        Account connectedAccount = new Account(accountName, AccountHelper.ACCOUNT_TYPE);
+                        AccountHelper.setCurrentAccount(connectedAccount);
+                        AccountHelper.setCurrentAuthtoken(authToken);
+
+                        ContentResolver.addPeriodicSync(connectedAccount, AUTHORITY, Bundle.EMPTY, 10);
+
                         Intent intent = new Intent(MainActivity.this, CollectionActivity.class);
                         MainActivity.this.startActivity(intent);
                     }

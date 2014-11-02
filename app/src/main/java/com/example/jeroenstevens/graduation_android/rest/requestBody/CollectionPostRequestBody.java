@@ -1,14 +1,23 @@
 package com.example.jeroenstevens.graduation_android.rest.requestBody;
 
 import com.example.jeroenstevens.graduation_android.object.Collection;
+import com.google.gson.annotations.Expose;
+
+import java.util.UUID;
 
 public class CollectionPostRequestBody {
-    Collection collection;
 
-    public CollectionPostRequestBody(String name, int userId) {
-        this.collection = new Collection();
-        this.collection.name = name;
-        this.collection.userId = userId;
+//    @Expose
+//    private final int userId;
+    @Expose
+    private final Collection collection;
+
+    public CollectionPostRequestBody(String name, UUID userId) {
+        Collection collection = new Collection();
+        collection.name = name;
+        collection.userId = userId;
+
+        this.collection = collection;
     }
 
     public CollectionPostRequestBody(Collection collection) {

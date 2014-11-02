@@ -1,35 +1,66 @@
 package com.example.jeroenstevens.graduation_android.object;
 
-import java.io.Serializable;
+import com.activeandroid.Model;
+import com.activeandroid.annotation.Column;
+import com.activeandroid.annotation.Table;
+import com.activeandroid.query.Select;
+import com.google.gson.annotations.Expose;
 
-public class User implements Serializable {
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
-    private String id;
-    private String email;
-    private String password;
-    private String userName;
-    private ApiKey apiKey;
 
-    public User(String email, String password) {
-        this.email = email;
-        this.password = password;
-        this.userName = email.split("@")[0];
+@Table(name = "users")
+public class User extends Model {
+
+    public static final String COL_ID = "_id";
+    public static final String COL_USER_NAME = "user_name";
+    public static final String COL_EMAIL = "email";
+    public static final String COL_UPDATED_AT = "updated_at";
+    public static final String COL_CREATED_AT = "created_at";
+
+    @Expose
+    @Column(name = COL_ID)
+    public UUID id;
+
+    @Expose
+    @Column(name = COL_EMAIL)
+    public String email;
+
+    @Expose
+    @Column(name = COL_USER_NAME)
+    public String userName;
+
+    @Expose
+    @Column(name = COL_CREATED_AT)
+    public String createdAt;
+
+    @Expose
+    @Column(name = COL_UPDATED_AT)
+    public String updatedAt;
+
+    @Expose
+    public String password;
+
+    public User() {
+        super();
+        id = UUID.randomUUID();
+        createdAt = new Date(System.currentTimeMillis()).toString();
+        updatedAt = new Date(System.currentTimeMillis()).toString();
     }
 
-    public String getId() {
-        return id;
+    public List<ApiKey> apiKeys() {
+        return new Select().from(ApiKey.class).where("user_id == ?", this.id).execute();
     }
 
-    public String getEmail() {
-        return email;
-    }
+    public static User getCurrentUser(String authToken) {
+        ApiKey apiKey = new Select().from(ApiKey.class).where(ApiKey.COL_ACCESS_TOKEN + " = ?", authToken).executeSingle();
+        User user = new Select().from(User.class).where(User.COL_ID + " = ?", apiKey.userId).executeSingle();
 
-    public ApiKey getApiKey() {
-        return apiKey;
-    }
+        // If Also create user when authenticating, fetch from server.
 
-    public void setApiKey(ApiKey apiKey) {
-        this.apiKey = apiKey;
+        return user;
     }
 }
 

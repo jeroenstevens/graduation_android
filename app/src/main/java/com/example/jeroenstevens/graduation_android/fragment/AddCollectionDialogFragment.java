@@ -25,7 +25,9 @@ import android.widget.Toast;
 
 import com.example.jeroenstevens.graduation_android.R;
 import com.example.jeroenstevens.graduation_android.activity.CollectionActivity;
+import com.example.jeroenstevens.graduation_android.authentication.AccountHelper;
 import com.example.jeroenstevens.graduation_android.object.Collection;
+import com.example.jeroenstevens.graduation_android.object.User;
 import com.example.jeroenstevens.graduation_android.syncadapter.SyncService;
 import com.example.jeroenstevens.graduation_android.utils.ImageHelper;
 import com.example.jeroenstevens.graduation_android.view.InfiniteClearableEditText;
@@ -94,6 +96,9 @@ public class AddCollectionDialogFragment extends DialogFragment {
             @Override
             public void onClick(View view) {
 
+                // Get the auth token for the current account.
+                final User user = User.getCurrentUser(AccountHelper.getCurrentAuthtoken());
+
                 // Insert into database
                 Collection collection = new Collection();
                 collection.name = collectionName.getText().toString();
@@ -101,6 +106,7 @@ public class AddCollectionDialogFragment extends DialogFragment {
                 if (mImagePath != null) {
                     collection.imagePath = mImagePath;
                 }
+                collection.userId = user.id;
                 collection.save();
                 databaseUpdated();
 

@@ -9,6 +9,7 @@ import com.example.jeroenstevens.graduation_android.rest.requestBody.UserAuthent
 import com.example.jeroenstevens.graduation_android.rest.requestBody.UserRegisterRequestBody;
 
 import java.util.List;
+import java.util.UUID;
 
 import retrofit.Callback;
 import retrofit.http.Body;
@@ -16,20 +17,21 @@ import retrofit.http.DELETE;
 import retrofit.http.GET;
 import retrofit.http.POST;
 import retrofit.http.Path;
+import retrofit.http.Query;
 
 public interface API {
 
     @POST("/users")
-    void registerUser(@Body UserRegisterRequestBody payload, Callback<ApiKey> callback); // payload new User(email, password)
+    void registerUser(@Body UserRegisterRequestBody payload, Callback<ApiKey> callback);
 
     @POST("/session")
-    void authenticateUser(@Body UserAuthenticateRequestBody payload, Callback<ApiKey> callback); // payload new User(email, password)
+    void authenticateUser(@Body UserAuthenticateRequestBody payload, Callback<ApiKey> callback);
 
-    @GET("/users/{user_id}/collections")
-    void getCollections(@Path("user_id") int userId, Callback<List<Collection>> callback);
+    @GET("/collections")
+    void getCollections(@Query("user_id") UUID userId, Callback<List<Collection>> callback);
 
-    @POST("/users/{user_id}/collections")
-    void postCollection(@Path("user_id") int userId, @Body CollectionPostRequestBody payload, Callback<Collection> callback);
+    @POST("/collections")
+    void postCollection(@Body CollectionPostRequestBody payload, Callback<Collection> callback);
 
     @GET("/collections/{collection_id}/items")
     void getItems(@Path("collection_id") int collectionId, Callback<List<Item>> callback);
